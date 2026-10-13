@@ -215,8 +215,8 @@ $('menuRules').onclick = function () { overlay('menuModal', false); openRules();
 $('rulesClose').onclick = function () { overlay('rulesModal', false); };
 function renderRef() {
   var g = lastView && lastView.g, ed1 = g ? g.kingdom.some(function (c) { return D[c].ed === 1; }) : true;
-  var list = g ? ['copper', 'silver', 'gold', 'shoryo', 'hakuryo', 'oukan', 'curse'].concat(L.sortK(g.kingdom)) : ['copper', 'silver', 'gold', 'shoryo', 'hakuryo', 'oukan', 'curse'].concat(L.sortK(L.pool(true)));
-  $('refNote').textContent = g ? 'このゲームで使うカード（残り枚数つき）' : '全カード（第2版の26種＋初版の6種）';
+  var list = g ? ['copper', 'silver', 'gold', 'shoryo', 'hakuryo', 'oukan', 'curse'].concat(L.sortK(g.kingdom)) : ['copper', 'silver', 'gold', 'shoryo', 'hakuryo', 'oukan', 'curse'].concat(L.sortK(L.pool()));
+  $('refNote').textContent = g ? 'このゲームで使うカード（残り枚数つき）' : '全カード（王国カード26種）';
   $('refList').innerHTML = list.map(function (c) { return '<div class="refRow">' + cardHtml(c) + '<div class="tx"><h4>' + cemo(c) + cname(c) + '<small>💰' + D[c].cost + (g ? '・残り' + g.supply[c] : '') + (D[c].ed === 1 ? '・初版' : '') + '</small></h4><div class="sm2">' + ctypes(c) + '</div>' + cardText(c) + '</div></div>'; }).join('');
 }
 $('refBtn1').onclick = $('refBtn2').onclick = $('menuRef').onclick = function () { overlay('menuModal', false); renderRef(); overlay('refModal', true); };

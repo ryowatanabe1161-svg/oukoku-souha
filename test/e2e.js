@@ -320,6 +320,8 @@ const errors = []; const fail = m => { errors.push(m); console.log('  ✗', m); 
       if (!kinds.swipeTreasure) fail(`[${tag}] no swipe-to-play happened`); else ok(`[${tag}] swipe up to play: treasures ×${kinds.swipeTreasure}${kinds.swipeAction ? ', actions ×' + kinds.swipeAction : ''}`);
       await landCheck(p, 'land-mid-' + tag); await p.screenshot({ path: SS + `land_${tag}_mid.png` });
       // ログ・相手の状態・追放置き場・メニュー（ひろばへ）
+      // 相手の攻撃（🔮呪術師など）で自分への質問が出ていたら先に答える
+      for (let k = 0; k < 6; k++) { const busy = await p.evaluate(() => { const g = window.__ll.view.g; if (g && g.need && g.need.p === g.me && ['yn', 'hand', 'pick', 'supply'].includes(g.need.k)) { window.__ll.act(autoAnswer(g)); return true; } return false; }); if (!busy) break; await sleep(300); }
       await p.click('#logBtnL'); await sleep(120);
       if (!(await p.isVisible('#log'))) fail(`[${tag}] log not reachable`); else { await p.screenshot({ path: SS + `land_${tag}_log.png` }); ok(`[${tag}] 📜 log opens`); }
       await p.click('#logToggle');

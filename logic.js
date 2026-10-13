@@ -8,6 +8,7 @@
   var D = C.D;
   function isA(c, t) { return !!D[c] && D[c].t.indexOf(t) >= 0; }
   function cost(c) { return D[c].cost; }
+  function price(S, c) { return Math.max(0, cost(c) - (S.discount || 0)); }
   function matches(c, f) { return !f || c === f || isA(c, f); }
   // ---- 乱数（状態に保存できる） ----
   function rngOf(S) { return function () { var t = S.rs = (S.rs + 0x6D2B79F5) | 0; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -21,14 +22,9 @@
     { id: 'decktop', n: '山札のてっぺん', ed: 2, k: ['meikou', 'chozei', 'entaku', 'shanikusai', 'hayauma', 'renkin', 'ryogae', 'monomi', 'kosho', 'shukuba'] },
     { id: 'sleight', n: '手さばき', ed: 2, k: ['monooki', 'entaku', 'shanikusai', 'yakusou', 'hayauma', 'shahon', 'jikeidan', 'wanashi', 'tetsuuchi', 'ekken'] },
     { id: 'improve', n: '改良の日々', ed: 2, k: ['meikou', 'monooki', 'bazaar', 'ginzaiku', 'kinmyaku', 'hanebashi', 'ryogae', 'wanashi', 'tatenaoshi', 'jujutsu'] },
-    { id: 'silvergold', n: '銀と金', ed: 2, k: ['yatou', 'chozei', 'zange', 'hayauma', 'renkin', 'ginzaiku', 'kinmyaku', 'ryogae', 'ekken', 'kosho'] },
-    { id: 'first1', n: 'はじめての王国（初版）', ed: 1, k: ['monooki', 'bazaar', 'jikeidan', 'kinmyaku', 'hanebashi', 'tatenaoshi', 'tetsuuchi', 'shukuba', 'sumiyaki', 'daikugoya'] },
-    { id: 'bigmoney1', n: '大金持ち（初版）', ed: 1, k: ['takara', 'chozei', 'zaimu', 'zange', 'daienkai', 'renkin', 'bazaar', 'kinmyaku', 'ryogae', 'ekken'] },
-    { id: 'interaction1', n: 'ふれあい（初版）', ed: 1, k: ['chozei', 'zaimu', 'entaku', 'shanikusai', 'shahon', 'jikeidan', 'hanebashi', 'kanja', 'kaitou', 'shukuba'] },
-    { id: 'size1', n: 'ちぐはぐな大きさ（初版）', ed: 1, k: ['monooki', 'zange', 'daienkai', 'yakusou', 'renkin', 'kaitou', 'shukuba', 'jujutsu', 'sumiyaki', 'daikugoya'] },
-    { id: 'square1', n: '宿場の広場（初版）', ed: 1, k: ['chozei', 'monooki', 'shanikusai', 'shahon', 'bazaar', 'tatenaoshi', 'tetsuuchi', 'ekken', 'shukuba', 'sumiyaki'] }
+    { id: 'silvergold', n: '銀と金', ed: 2, k: ['yatou', 'chozei', 'zange', 'hayauma', 'renkin', 'ginzaiku', 'kinmyaku', 'ryogae', 'ekken', 'kosho'] }
   ];
-  function pool(ed1) { return ed1 ? C.K2.concat(C.K1) : C.K2.slice(); }
+  function pool() { return C.K2.slice(); }
   function randomKingdom(rnd, ed1, fixed) {
     var out = (fixed || []).slice(0, 10), rest = shuffle(pool(ed1).filter(function (k) { return out.indexOf(k) < 0; }), rnd);
     while (out.length < 10) out.push(rest.shift());
@@ -137,7 +133,7 @@
           var c = String(a.c); if (!(c in S.supply)) return 'そのカードは買えません';
           if (!S.supply[c]) return 'その山はもうありません';
           var coins = S.coins + (a.auto && !S.bought ? handCoins(S, nd.p) : 0);
-          if (coins < cost(c)) return 'お金が足りません';
+          if (coins < price(S, c)) return 'お金が足りません';
           if (S.buys < 1) return '購入が残っていません';
           return { a: 'buy', c: c, auto: !!a.auto && !S.bought };
         }
@@ -224,7 +220,12 @@
       P.disc.pop(); P.play.push(c); ev(S, { k: 'play', p: p, c: c, via: 'kosho' });
       yield* playCard(S, p, c, {});
     },
-    shukuba: function* () {},
+    shukuba: function* (S, p) {
+      var t = takeTop(S, p, 1); if (!t.length) return;
+      var c = t[0]; ev(S, { k: 'reveal', p: p, cards: [c], why: 'shukuba' });
+      if (isA(c, 'action')) { S.P[p].hand.push(c); ev(S, { k: 'draw', p: p, n: 1, why: 'shukuba', mine: { cards: [c] } }); }
+      else { S.P[p].disc.push(c); ev(S, { k: 'discard', p: p, n: 1, top: c, open: [c], why: 'shukuba' }); }
+    },
     daikugoya: function* (S, p) { yield* gainUpTo(S, p, 4, null, 'disc', 'daikugoya'); },
     chozei: function* (S, p, inst, prot) {
       gain(S, p, 'silver', 'deck', 'chozei');
@@ -239,14 +240,14 @@
     jikeidan: function* (S, p, inst, prot) {
       for (var q of others(S, p)) {
         if (prot[q]) continue;
-        var n = S.P[q].hand.length - 3; if (n <= 0) continue;
-        var sel = yield* pickHand(S, q, { min: n, max: n, why: 'jikeidan', by: p });
+        if (!S.P[q].hand.some(function (c) { return isA(c, 'treasure'); })) { ev(S, { k: 'show', p: q, cards: S.P[q].hand.slice(), why: 'jikeidan' }); continue; }
+        var sel = yield* pickHand(S, q, { min: 1, max: 1, filter: 'treasure', why: 'jikeidan', by: p });
         discardCards(S, q, takeIdx(S.P[q].hand, sel), 'jikeidan');
       }
     },
     ryogae: function* (S, p) {
-      var sel = yield* pickHand(S, p, { min: 0, max: 1, filter: 'copper', why: 'ryogae' });
-      if (sel.length) { trashCards(S, p, takeIdx(S.P[p].hand, sel), 'ryogae'); S.coins += 3; }
+      var sel = yield* pickHand(S, p, { min: 0, max: 1, filter: 'treasure', why: 'ryogae' });
+      if (sel.length) { var c = takeIdx(S.P[p].hand, sel)[0]; trashCards(S, p, [c], 'ryogae'); S.coins += cost(c) + 2; }
     },
     wanashi: function* (S, p) {
       var n = Math.min(emptyPiles(S), S.P[p].hand.length); if (!n) return;
@@ -259,15 +260,20 @@
       var c = takeIdx(S.P[p].hand, sel)[0]; trashCards(S, p, [c], 'tatenaoshi');
       yield* gainUpTo(S, p, cost(c) + 2, null, 'disc', 'tatenaoshi');
     },
-    tetsuuchi: function* () {},
+    tetsuuchi: function* (S, p) {
+      var sel = yield* pickHand(S, p, { min: 0, max: 1, filter: 'copper', why: 'tetsuuchi', ask: true });
+      if (!sel.length) return;
+      discardCards(S, p, takeIdx(S.P[p].hand, sel), 'tetsuuchi'); draw(S, p, 1, 'tetsuuchi');
+    },
     ekken: function* (S, p) {
       var sel = yield* pickHand(S, p, { min: 0, max: 1, filter: 'action', why: 'ekken' });
       if (!sel.length) return;
-      var c = takeIdx(S.P[p].hand, sel)[0], inst = {}; S.P[p].play.push(c);
+      var c = takeIdx(S.P[p].hand, sel)[0]; S.P[p].play.push(c);
       ev(S, { k: 'play', p: p, c: c, via: 'ekken', n: 1 });
-      yield* playCard(S, p, c, inst);
-      ev(S, { k: 'play', p: p, c: c, via: 'ekken', n: 2 });
-      yield* playCard(S, p, c, inst);
+      yield* playCard(S, p, c, {});
+      var P = S.P[p], i = P.play.lastIndexOf(c); if (i < 0) return;
+      var r = yield* ask(S, { p: p, k: 'yn', why: 'ekkenBack', c: c });
+      if (r.y && P.play.lastIndexOf(c) >= 0) { P.play.splice(P.play.lastIndexOf(c), 1); P.deck.unshift(c); ev(S, { k: 'topdeck', p: p, n: 1, c: c, why: 'ekken' }); }
     },
     yatou: function* (S, p, inst, prot) {
       gain(S, p, 'gold', 'disc', 'yatou');
@@ -285,9 +291,18 @@
         if (rest.length) ev(S, { k: 'discard', p: q, n: rest.length, top: rest[rest.length - 1], open: rest.slice(), why: 'yatou' });
       }
     },
-    entaku: function* (S, p) { for (var q of others(S, p)) draw(S, q, 1, 'entaku'); },
-    shanikusai: function* () {},
-    renkin: function* () {},
+    entaku: function* (S, p) {
+      for (var q of others(S, p)) {
+        if (!S.P[q].hand.length) continue;
+        var sel = yield* pickHand(S, q, { min: 1, max: 1, why: 'entaku', by: p });
+        ev(S, { k: 'show', p: q, cards: [S.P[q].hand[sel[0]]], why: 'entaku' });
+      }
+    },
+    shanikusai: function* (S) { S.discount = (S.discount || 0) + 1; },
+    renkin: function* (S, p) {
+      var sel = yield* pickHand(S, p, { min: 0, max: 1, why: 'renkin' });
+      if (sel.length) { trashCards(S, p, takeIdx(S.P[p].hand, sel), 'renkin'); S.coins += 2; }
+    },
     shahon: function* (S, p) {
       var P = S.P[p], aside = [];
       while (P.hand.length < 7) {
@@ -301,7 +316,11 @@
       }
       if (aside.length) { aside.forEach(function (c) { P.aside.splice(P.aside.indexOf(c), 1); P.disc.push(c); }); ev(S, { k: 'discard', p: p, n: aside.length, top: aside[aside.length - 1], open: aside.slice(), why: 'shahon' }); }
     },
-    bazaar: function* () {},
+    bazaar: function* (S, p) {
+      var opts = gainOptions(S, 2, null); if (!opts.length) return;
+      var r = yield* ask(S, { p: p, k: 'supply', max: 2, filter: null, dest: 'disc', why: 'bazaar', optional: true });
+      if (r.c) gain(S, p, r.c, 'disc', 'bazaar');
+    },
     kinmyaku: function* (S, p) {
       var sel = yield* pickHand(S, p, { min: 0, max: 1, filter: 'treasure', why: 'kinmyaku' });
       if (!sel.length) return;
@@ -320,7 +339,14 @@
       ev(S, { k: 'monomiDone', p: p, nt: tr.length, nd: di.length, nk: back.length, mine: { back: back } });
     },
     jujutsu: function* (S, p, inst, prot) {
-      for (var q of others(S, p)) { if (prot[q]) continue; if (!gain(S, q, 'curse', 'disc', 'jujutsu')) ev(S, { k: 'nogain', p: q, c: 'curse', why: 'jujutsu' }); }
+      for (var q of others(S, p)) {
+        if (prot[q]) continue;
+        var canCurse = S.supply.curse > 0, canDisc = S.P[q].hand.length > 0;
+        if (!canCurse && !canDisc) continue;
+        var dis = !canCurse ? true : !canDisc ? false : (yield* ask(S, { p: q, k: 'yn', why: 'jujutsu', by: p })).y;
+        if (dis) { var sel = yield* pickHand(S, q, { min: 1, max: 1, why: 'jujutsuDisc', by: p }); discardCards(S, q, takeIdx(S.P[q].hand, sel), 'jujutsu'); }
+        else gain(S, q, 'curse', 'disc', 'jujutsu');
+      }
     },
     meikou: function* (S, p) {
       yield* gainUpTo(S, p, 5, null, 'hand', 'meikou');
@@ -329,56 +355,7 @@
       var c = takeIdx(S.P[p].hand, sel)[0]; S.P[p].deck.unshift(c);
       ev(S, { k: 'topdeck', p: p, n: 1, why: 'meikou', mine: { cards: [c] } });
     },
-    yakusou: function* () {},
-    // ---- 初版 ----
-    takara: function* (S, p) {
-      var P = S.P[p], rev = [], tr = [];
-      while (tr.length < 2) { var t = takeTop(S, p, 1); if (!t.length) break; rev.push(t[0]); if (isA(t[0], 'treasure')) tr.push(t[0]); }
-      ev(S, { k: 'reveal', p: p, cards: rev.slice(), why: 'takara' });
-      var rest = rev.slice(); tr.forEach(function (c) { rest.splice(rest.indexOf(c), 1); P.hand.push(c); });
-      rest.forEach(function (c) { P.disc.push(c); });
-      if (rest.length) ev(S, { k: 'discard', p: p, n: rest.length, top: rest[rest.length - 1], open: rest.slice(), why: 'takara' });
-    },
-    zaimu: function* (S, p) {
-      var P = S.P[p]; if (!P.deck.length) return;
-      var r = yield* ask(S, { p: p, k: 'yn', why: 'zaimu' });
-      if (r.y) { var n = P.deck.length; P.disc = P.disc.concat(P.deck); P.deck = []; ev(S, { k: 'deckToDisc', p: p, n: n }); }
-    },
-    daienkai: function* (S, p, inst) {
-      var P = S.P[p], i = P.play.lastIndexOf('daienkai');
-      if (!inst.moved && i >= 0) { inst.moved = true; P.play.splice(i, 1); trashCards(S, p, ['daienkai'], 'daienkai'); }
-      yield* gainUpTo(S, p, 5, null, 'disc', 'daienkai');
-    },
-    kanja: function* (S, p, inst, prot) {
-      var who = [p].concat(others(S, p).filter(function (q) { return !prot[q]; }));
-      for (var q of who) {
-        var t = takeTop(S, q, 1); if (!t.length) continue;
-        var c = t[0]; ev(S, { k: 'reveal', p: q, cards: [c], why: 'kanja' });
-        var r = yield* ask(S, { p: p, k: 'yn', why: 'kanja', c: c, who: q });
-        if (r.y) { S.P[q].disc.push(c); ev(S, { k: 'discard', p: q, n: 1, top: c, open: [c], why: 'kanja' }); }
-        else { S.P[q].deck.unshift(c); ev(S, { k: 'putBack', p: q, c: c, why: 'kanja' }); }
-      }
-    },
-    kaitou: function* (S, p, inst, prot) {
-      var taken = [];
-      for (var q of others(S, p)) {
-        if (prot[q]) continue;
-        var cards = takeTop(S, q, 2); ev(S, { k: 'reveal', p: q, cards: cards.slice(), why: 'kaitou' });
-        if (!cards.length) continue;
-        var cand = []; cards.forEach(function (c, i) { if (isA(c, 'treasure')) cand.push(i); });
-        var ti = -1;
-        if (cand.length === 1 || (cand.length === 2 && cards[0] === cards[1])) ti = cand[0];
-        else if (cand.length === 2) { var r = yield* ask(S, { p: p, k: 'pick', cards: cards.slice(), min: 1, max: 1, only: cand, why: 'kaitou', who: q }); ti = r.sel[0]; }
-        if (ti >= 0) { trashCards(S, q, [cards[ti]], 'kaitou'); taken.push(cards[ti]); }
-        var rest = cards.filter(function (c, i) { return i !== ti; });
-        rest.forEach(function (c) { S.P[q].disc.push(c); });
-        if (rest.length) ev(S, { k: 'discard', p: q, n: rest.length, top: rest[rest.length - 1], open: rest.slice(), why: 'kaitou' });
-      }
-      if (!taken.length) return;
-      var g = yield* ask(S, { p: p, k: 'pick', cards: taken.slice(), min: 0, max: taken.length, why: 'kaitouGain' });
-      g.sel.forEach(function (i) { var c = taken[i], j = S.trash.lastIndexOf(c); if (j >= 0) { S.trash.splice(j, 1); S.P[p].disc.push(c); ev(S, { k: 'gain', p: p, c: c, dest: 'disc', why: 'kaitou', fromTrash: true }); } });
-    },
-    sumiyaki: function* () {}
+    yakusou: function* () {}
   };
   function* playCard(S, p, c, inst) {
     var prot = {};
@@ -398,7 +375,7 @@
     while (true) {
       var p = S.turn, P = S.P[p];
       P.turns++; S.turnNo++;
-      S.phase = 'action'; S.actions = 1; S.buys = 1; S.coins = 0; S.merch = 0; S.silver = false; S.bought = false;
+      S.phase = 'action'; S.actions = 1; S.buys = 1; S.coins = 0; S.merch = 0; S.discount = 0; S.silver = false; S.bought = false;
       ev(S, { k: 'turn', p: p, n: P.turns });
       while (S.actions > 0 && P.hand.some(function (c) { return isA(c, 'action'); })) {
         var a = yield* ask(S, { p: p, k: 'action' });
@@ -413,7 +390,7 @@
         if (b.a === 'end') break;
         if (b.a === 'treasure') { var tc = P.hand[b.i], m = playTreasure(S, p, b.i); ev(S, { k: 'treasures', p: p, cards: [tc], m: m }); continue; }
         if (b.a === 'all' || b.auto) { var cs = [], mm = 0; for (var i = P.hand.length - 1; i >= 0; i--) if (isA(P.hand[i], 'treasure')) { cs.unshift(P.hand[i]); mm += playTreasure(S, p, i); } if (cs.length) ev(S, { k: 'treasures', p: p, cards: cs, m: mm }); if (b.a === 'all') continue; }
-        S.buys--; S.coins -= cost(b.c); S.bought = true;
+        S.buys--; S.coins -= price(S, b.c); S.bought = true;
         gain(S, p, b.c, 'disc', 'buy');
       }
       // 片付け：手札を捨ててから、場のカードをその上に（手札の中身は見せなくてよい）
@@ -460,7 +437,7 @@
   function pubPlayer(P) { var all = owned(P); return { nh: P.hand.length, nd: P.deck.length, ndisc: P.disc.length, top: P.disc.length ? P.disc[P.disc.length - 1] : null, play: P.play.slice(), aside: P.aside.slice(), turns: P.turns, own: counts(all), total: all.length, vp: vpOf(all) }; }
   function viewFor(S, q, nEv) {
     var v = { np: S.np, kingdom: S.kingdom.slice(), supply: Object.assign({}, S.supply), trash: S.trash.slice(), turn: S.turn, turnNo: S.turnNo, phase: S.phase,
-      actions: S.actions, buys: S.buys, coins: S.coins, merch: S.merch, silver: S.silver, bought: S.bought, over: S.over, result: S.result, first: S.first,
+      actions: S.actions, buys: S.buys, coins: S.coins, discount: S.discount || 0, merch: S.merch, silver: S.silver, bought: S.bought, over: S.over, result: S.result, first: S.first,
       P: S.P.map(pubPlayer), hand: q >= 0 && q < S.np ? S.P[q].hand.slice() : null, need: needView(S.need, q), k: S.seq,
       ev: S.ev.slice(-(nEv || 120)).map(function (e) { return evView(e, q); }) };
     return v;
@@ -470,6 +447,6 @@
 
   var api = { C: C, D: D, isA: isA, cost: cost, matches: matches, SETS: SETS, pool: pool, randomKingdom: randomKingdom, sortK: sortK, supplyCounts: supplyCounts,
     newGame: newGame, act: act, viewFor: viewFor, replay: replay, mulberry: mulberry, shuffle: shuffle, owned: owned, counts: counts, vpOf: vpOf, emptyPiles: emptyPiles,
-    gainOptions: gainOptions, handCoins: handCoins, others: others };
+    gainOptions: gainOptions, price: price, handCoins: handCoins, others: others };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.KS = api;
 })(this);

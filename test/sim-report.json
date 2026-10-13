@@ -1,418 +1,418 @@
 [
  {
   "name": "2人 normal vs weak",
-  "games": 400,
-  "kingdoms": 200,
+  "games": 100,
+  "kingdoms": 50,
   "rate": {
    "normal": {
-    "win": 92.8,
+    "win": 95,
     "seats": 1
    },
    "weak": {
-    "win": 7.3,
+    "win": 5,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 23,
+  "turnsPerPlayer": 23.7,
   "oukanEnd": 100,
   "sec": 1
  },
  {
   "name": "2人 strong vs weak",
-  "games": 400,
-  "kingdoms": 200,
+  "games": 100,
+  "kingdoms": 50,
   "rate": {
    "strong": {
-    "win": 99.8,
+    "win": 98,
     "seats": 1
    },
    "weak": {
-    "win": 0.3,
+    "win": 2,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 24.9,
-  "oukanEnd": 98,
+  "turnsPerPlayer": 26.2,
+  "oukanEnd": 92,
   "sec": 1
  },
  {
   "name": "2人 ultra vs weak",
-  "games": 400,
-  "kingdoms": 40,
+  "games": 100,
+  "kingdoms": 10,
   "rate": {
    "ultra": {
-    "win": 99.8,
+    "win": 100,
     "seats": 1
    },
    "weak": {
-    "win": 0.3,
+    "win": 0,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 25.1,
-  "oukanEnd": 97,
-  "ultraSelectSec": 1.5,
+  "turnsPerPlayer": 23.5,
+  "oukanEnd": 100,
+  "ultraSelectSec": 1.52,
   "ultraPicks": [
    [
-    "呪術師×2＋お金",
-    12
-   ],
-   [
-    "円卓の間＋お金",
+    "謝肉祭＋お金",
     5
    ],
    [
-    "バザール＋自警団＋お金",
-    4
+    "野盗＋お金",
+    2
    ],
    [
     "謝肉祭＋自警団＋お金",
-    3
+    1
    ],
    [
-    "バザール＋お金",
-    2
+    "錬金室＋自警団＋お金",
+    1
+   ],
+   [
+    "物見やぐら＋自警団＋お金",
+    1
    ]
   ],
-  "sec": 61
+  "sec": 15
  },
  {
   "name": "2人 strong vs normal",
-  "games": 400,
-  "kingdoms": 200,
+  "games": 100,
+  "kingdoms": 50,
   "rate": {
    "strong": {
-    "win": 85.4,
+    "win": 83.5,
     "seats": 1
    },
    "normal": {
-    "win": 14.6,
+    "win": 16.5,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 18,
+  "turnsPerPlayer": 17.8,
   "oukanEnd": 100,
-  "sec": 1
+  "sec": 0
  },
  {
   "name": "2人 ultra vs normal",
-  "games": 400,
-  "kingdoms": 40,
+  "games": 100,
+  "kingdoms": 10,
   "rate": {
    "ultra": {
-    "win": 88.9,
+    "win": 89,
     "seats": 1
    },
    "normal": {
-    "win": 11.1,
+    "win": 11,
     "seats": 1
    }
   },
   "fair": 50,
   "turnsPerPlayer": 18.1,
   "oukanEnd": 100,
-  "ultraSelectSec": 1.49,
+  "ultraSelectSec": 1.72,
   "ultraPicks": [
    [
-    "懺悔室＋呪術師",
-    7
+    "謝肉祭＋お金",
+    2
    ],
    [
-    "円卓の間×2＋お金",
-    6
+    "野盗＋お金",
+    2
    ],
    [
-    "呪術師×2＋お金",
-    4
+    "徴税官＋お金",
+    1
    ],
    [
-    "鉄打ち場＋お金",
-    4
+    "跳ね橋×2＋お金",
+    1
    ],
    [
-    "円卓の間＋お金",
-    4
+    "錬金室＋自警団＋お金",
+    1
    ]
   ],
-  "sec": 60
+  "sec": 17
  },
  {
   "name": "2人 ultra vs strong",
-  "games": 400,
-  "kingdoms": 40,
+  "games": 100,
+  "kingdoms": 10,
   "rate": {
    "ultra": {
-    "win": 68.5,
+    "win": 69.5,
     "seats": 1
    },
    "strong": {
-    "win": 31.5,
+    "win": 30.5,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 23,
-  "oukanEnd": 82,
+  "turnsPerPlayer": 23.2,
+  "oukanEnd": 93,
   "ultraSelectSec": 1.53,
   "ultraPicks": [
    [
-    "呪術師×2＋お金",
-    10
-   ],
-   [
     "円卓の間＋お金",
-    6
-   ],
-   [
-    "錬金室＋自警団＋お金",
-    4
-   ],
-   [
-    "懺悔室＋呪術師",
     3
    ],
    [
-    "呪術師＋お金",
-    3
+    "謝肉祭＋自警団＋お金",
+    2
+   ],
+   [
+    "徴税官＋お金",
+    2
+   ],
+   [
+    "野盗＋お金",
+    2
+   ],
+   [
+    "円卓の間×2＋お金",
+    1
    ]
   ],
-  "sec": 62
+  "sec": 16
  },
  {
   "name": "2人 bmu(お金だけ最適) vs normal",
-  "games": 400,
-  "kingdoms": 200,
+  "games": 100,
+  "kingdoms": 50,
   "rate": {
    "bmu": {
-    "win": 75.9,
+    "win": 81,
     "seats": 1
    },
    "normal": {
-    "win": 24.1,
+    "win": 19,
     "seats": 1
    }
   },
   "fair": 50,
   "turnsPerPlayer": 18.4,
   "oukanEnd": 100,
-  "sec": 1
+  "sec": 0
  },
  {
   "name": "2人 strong vs bmu",
-  "games": 400,
-  "kingdoms": 200,
+  "games": 100,
+  "kingdoms": 50,
   "rate": {
    "strong": {
-    "win": 73.9,
+    "win": 52.5,
     "seats": 1
    },
    "bmu": {
-    "win": 26.1,
+    "win": 47.5,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 22.9,
-  "oukanEnd": 98,
-  "sec": 1
+  "turnsPerPlayer": 22.3,
+  "oukanEnd": 93,
+  "sec": 0
  },
  {
   "name": "2人 ultra vs bmu",
-  "games": 400,
-  "kingdoms": 40,
+  "games": 100,
+  "kingdoms": 10,
   "rate": {
    "ultra": {
-    "win": 82.9,
+    "win": 73.5,
     "seats": 1
    },
    "bmu": {
-    "win": 17.1,
+    "win": 26.5,
     "seats": 1
    }
   },
   "fair": 50,
-  "turnsPerPlayer": 22.5,
-  "oukanEnd": 96,
-  "ultraSelectSec": 1.48,
+  "turnsPerPlayer": 21.3,
+  "oukanEnd": 100,
+  "ultraSelectSec": 1.58,
   "ultraPicks": [
    [
-    "呪術師×2＋お金",
-    8
-   ],
-   [
-    "写本室＋お金",
-    5
-   ],
-   [
-    "円卓の間×2＋お金",
-    4
-   ],
-   [
-    "バザール＋鉄打ち場＋お金",
+    "謝肉祭＋自警団＋お金",
     3
    ],
    [
-    "懺悔室＋呪術師",
-    3
+    "円卓の間＋お金",
+    2
+   ],
+   [
+    "野盗＋お金",
+    2
+   ],
+   [
+    "物見やぐら＋自警団＋お金",
+    1
+   ],
+   [
+    "跳ね橋＋お金",
+    1
    ]
   ],
-  "sec": 60
+  "sec": 16
  },
  {
   "name": "3人 ultra×1 vs strong×2",
-  "games": 360,
-  "kingdoms": 30,
+  "games": 96,
+  "kingdoms": 8,
   "rate": {
    "ultra": {
-    "win": 43.3,
+    "win": 44.3,
     "seats": 1
    },
    "strong": {
-    "win": 56.7,
+    "win": 55.7,
     "seats": 2
    }
   },
   "fair": 33.3,
-  "turnsPerPlayer": 23.3,
-  "oukanEnd": 72,
-  "ultraSelectSec": 2.82,
+  "turnsPerPlayer": 23.1,
+  "oukanEnd": 90,
+  "ultraSelectSec": 2.97,
   "ultraPicks": [
    [
-    "懺悔室＋呪術師",
-    8
-   ],
-   [
-    "呪術師×2＋跳ね橋＋お金",
-    3
-   ],
-   [
-    "バザール＋自警団＋お金",
-    2
-   ],
-   [
-    "大工小屋＋薬草畑",
+    "円卓の間×2＋お金",
     2
    ],
    [
     "錬金室＋自警団＋お金",
-    2
+    1
+   ],
+   [
+    "野盗＋お金",
+    1
+   ],
+   [
+    "自警団×2＋お金",
+    1
+   ],
+   [
+    "円卓の間＋お金",
+    1
    ]
   ],
-  "sec": 86
+  "sec": 24
  },
  {
   "name": "4人 ultra×1 vs strong×3",
-  "games": 360,
-  "kingdoms": 30,
+  "games": 96,
+  "kingdoms": 8,
   "rate": {
    "ultra": {
-    "win": 48.1,
+    "win": 34.9,
     "seats": 1
    },
    "strong": {
-    "win": 51.9,
+    "win": 65.1,
     "seats": 3
    }
   },
   "fair": 25,
-  "turnsPerPlayer": 18.6,
-  "oukanEnd": 66,
-  "ultraSelectSec": 3.32,
+  "turnsPerPlayer": 17.1,
+  "oukanEnd": 82,
+  "ultraSelectSec": 3.02,
   "ultraPicks": [
    [
-    "鉄打ち場＋お金",
-    5
+    "謝肉祭＋お金",
+    3
+   ],
+   [
+    "円卓の間＋お金",
+    2
+   ],
+   [
+    "野盗＋お金",
+    1
    ],
    [
     "大工小屋＋薬草畑",
-    5
+    1
    ],
    [
-    "バザール＋鉄打ち場＋お金",
-    4
-   ],
-   [
-    "バザール＋自警団＋お金",
-    3
-   ],
-   [
-    "呪術師×2＋跳ね橋＋お金",
-    3
+    "謝肉祭＋自警団＋お金",
+    1
    ]
   ],
-  "sec": 101
+  "sec": 24
  },
  {
   "name": "3人 strong×1 vs normal×2",
-  "games": 450,
-  "kingdoms": 150,
+  "games": 114,
+  "kingdoms": 38,
   "rate": {
    "strong": {
-    "win": 74.3,
+    "win": 64.5,
     "seats": 1
    },
    "normal": {
-    "win": 25.7,
+    "win": 35.5,
     "seats": 2
    }
   },
   "fair": 33.3,
-  "turnsPerPlayer": 18.6,
+  "turnsPerPlayer": 18.7,
   "oukanEnd": 100,
   "sec": 1
  },
  {
   "name": "4人 混成 weak/normal/strong/ultra",
-  "games": 240,
-  "kingdoms": 30,
+  "games": 64,
+  "kingdoms": 8,
   "rate": {
    "weak": {
-    "win": 0.4,
+    "win": 0,
     "seats": 1
    },
    "normal": {
-    "win": 6.9,
+    "win": 6.3,
     "seats": 1
    },
    "strong": {
-    "win": 47.3,
+    "win": 26.6,
     "seats": 1
    },
    "ultra": {
-    "win": 45.4,
+    "win": 67.2,
     "seats": 1
    }
   },
   "fair": 25,
-  "turnsPerPlayer": 18.1,
-  "oukanEnd": 92,
-  "ultraSelectSec": 2.74,
+  "turnsPerPlayer": 18.5,
+  "oukanEnd": 86,
+  "ultraSelectSec": 3.15,
   "ultraPicks": [
    [
+    "謝肉祭＋お金",
+    2
+   ],
+   [
+    "物見やぐら＋自警団＋お金",
+    1
+   ],
+   [
     "円卓の間＋お金",
-    6
-   ],
-   [
-    "鉄打ち場＋お金",
-    4
-   ],
-   [
-    "写本室＋お金",
-    3
-   ],
-   [
-    "呪術師＋お金",
-    3
+    1
    ],
    [
     "野盗＋お金",
-    3
+    1
+   ],
+   [
+    "大工小屋＋薬草畑",
+    1
    ]
   ],
-  "sec": 83
+  "sec": 25
  }
 ]

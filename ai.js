@@ -10,8 +10,8 @@
   var W = (typeof module !== 'undefined' && module.exports) ? (function () { try { return require('./weights.js'); } catch (e) { return null; } })() : root.KS_WEIGHTS;
   var D = L.D, isA = L.isA, cost = L.cost;
   var TW = Object.assign({ provAt: 16, hakuryoAt: 4, shoryoAt: 2, hakuryoLate: 5, ratio: 11, ppr: 1 }, (W && W.strong) || {});
-  var COINV = { bazaar: 1, shanikusai: 2, jikeidan: 2, kosho: 2, sumiyaki: 2, zaimu: 2, wanashi: 1, yatou: 1.2, ryogae: 1.2, ginzaiku: 0.5 };
-  var DRAW = { tetsuuchi: 3, entaku: 4, shahon: 3, hanebashi: 2, jujutsu: 2, renkin: 1, takara: 2 };
+  var COINV = { renkin: 0.8, shanikusai: 2.6, jikeidan: 2, kosho: 2, wanashi: 1, yatou: 1.2, ryogae: 1, ginzaiku: 0.5 };
+  var DRAW = { tetsuuchi: 2.5, entaku: 3, shahon: 3, hanebashi: 2, jujutsu: 2, renkin: 1 };
   var TERM = function (c) { return isA(c, 'action') && !(D[c].plus && D[c].plus.a) && c !== 'ekken'; };
 
   // ================= 知ってよい情報 =================
@@ -24,7 +24,7 @@
     for (var c in own) { total += own[c]; if (isA(c, 'treasure')) money += D[c].coin * own[c]; if (COINV[c]) money += COINV[c] * own[c]; }
     var P0 = S.np === 2 ? 8 : 12, myVp = vp[p], oppVp = Math.max.apply(null, vp.filter(function (v, i) { return i !== p; }));
     return {
-      p: p, np: S.np, phase: S.phase, actions: S.actions, buys: S.buys, coins: S.coins, merch: S.merch, silver: S.silver, bought: S.bought,
+      p: p, np: S.np, phase: S.phase, actions: S.actions, buys: S.buys, coins: S.coins + (S.discount || 0), discount: S.discount || 0, merch: S.merch, silver: S.silver, bought: S.bought,
       hand: P.hand.slice(), play: P.play.slice(), deckN: P.deck.length, deckComp: L.counts(P.deck), disc: L.counts(P.disc), discTop: P.disc[P.disc.length - 1],
       own: own, total: total, money: money, supply: Object.assign({}, S.supply), kingdom: S.kingdom.slice(), trash: S.trash.length,
       vp: vp, myVp: myVp, oppVp: oppVp, lead: myVp - oppVp, turnsMine: P.turns, turns: S.P.map(function (Q) { return Q.turns; }), turnOrder: S.turn, first: S.first,
@@ -94,10 +94,10 @@
   // 盤面から作戦の候補を作る
   function candidates(kingdom, np) {
     var k = kingdom, has = function (c) { return k.indexOf(c) >= 0; }, out = [bmu()];
-    var terms = ['jujutsu', 'tetsuuchi', 'entaku', 'shahon', 'jikeidan', 'ryogae', 'yatou', 'chozei', 'hanebashi', 'kinmyaku', 'meikou', 'kosho', 'sumiyaki', 'zaimu', 'takara', 'tatenaoshi', 'kaitou', 'daikugoya'];
+    var terms = ['jujutsu', 'tetsuuchi', 'entaku', 'shahon', 'jikeidan', 'ryogae', 'yatou', 'chozei', 'hanebashi', 'kinmyaku', 'meikou', 'kosho', 'tatenaoshi', 'daikugoya'];
     terms.forEach(function (x) { if (!has(x)) return; out.push(bmx(x, 1)); if (DRAW[x] || x === 'jikeidan' || x === 'jujutsu') out.push(bmx(x, 2, { xFirst: x === 'jujutsu' })); });
     if (has('jujutsu')) out.push(bmx('jujutsu', 2, { xFirst: true, tag: 'agg', provAt: 15 }));
-    ['renkin', 'bazaar', 'shanikusai', 'ginzaiku', 'monomi', 'hayauma', 'wanashi', 'kanja'].forEach(function (x) {
+    ['renkin', 'bazaar', 'shanikusai', 'ginzaiku', 'monomi', 'hayauma', 'wanashi'].forEach(function (x) {
       if (!has(x)) return; out.push(bmn(x));
       ['jujutsu', 'tetsuuchi', 'shahon', 'entaku', 'jikeidan', 'ryogae'].forEach(function (t) { if (has(t)) out.push(bmn(x, { t: t, tmax: t === 'jujutsu' || DRAW[t] ? 2 : 1 })); });
     });
@@ -110,14 +110,13 @@
       ['jujutsu', 'jikeidan'].forEach(function (pay) { if (has(pay)) out.push(engine(v, d, { k: k, pay: pay, payMax: pay === 'jujutsu' ? 2 : 1 })); });
     }); });
     if (has('zange')) ['jujutsu', 'renkin', 'bazaar', 'jikeidan', 'tetsuuchi', 'kinmyaku'].forEach(function (x) { if (has(x)) out.push(zangePlan(x, { k: k, max: x === 'renkin' || x === 'bazaar' ? 6 : 2 })); });
-    if (has('yakusou')) ['daikugoya', 'sumiyaki'].forEach(function (w) { if (has(w)) out.push(yakusouRush(w)); });
+    if (has('yakusou')) ['daikugoya'].forEach(function (w) { if (has(w)) out.push(yakusouRush(w)); });
     var seen = {}; return out.filter(function (pl) { if (seen[pl.id]) return false; seen[pl.id] = 1; return true; });
   }
   // 「強い」が選ぶ作戦（盤面を見た経験則）
-  var TERM_RANK = { jujutsu: 10, shahon: 7.6, tetsuuchi: 7.5, entaku: 7, jikeidan: 6.8, yatou: 5.6, ryogae: 6, meikou: 5.8, chozei: 5.4, kinmyaku: 4.6, kosho: 5, takara: 4.9, hanebashi: 5.2, sumiyaki: 4.4, zaimu: 4.2, tatenaoshi: 4, kaitou: 2, daikugoya: 3 };
+  var TERM_RANK = { entaku: 8, jikeidan: 7.8, shahon: 7.6, jujutsu: 7.2, tetsuuchi: 6.6, yatou: 5.6, ryogae: 6, meikou: 5.8, chozei: 5.4, kinmyaku: 4.6, kosho: 5, hanebashi: 5.2, tatenaoshi: 4, daikugoya: 3 };
   function strongPlan(kingdom, np) {
     var has = function (c) { return kingdom.indexOf(c) >= 0; };
-    if (has('jujutsu')) return has('renkin') ? bmn('renkin', { t: 'jujutsu', tmax: 2 }) : bmx('jujutsu', 2, { xFirst: true });
     if (has('yakusou') && has('daikugoya') && np >= 3) return yakusouRush('daikugoya');
     var best = null, bv = 0;
     Object.keys(TERM_RANK).forEach(function (x) { if (has(x) && TERM_RANK[x] > bv) { bv = TERM_RANK[x]; best = x; } });
@@ -134,8 +133,8 @@
   }
 
   // ================= カードの価値（判断用の目安） =================
-  var AV = { jujutsu: 4.2, renkin: 3.4, bazaar: 3.3, shanikusai: 3.1, tetsuuchi: 3.2, shahon: 3.2, entaku: 3.1, jikeidan: 3, monomi: 3, meikou: 3.4, kinmyaku: 2.6, yatou: 2.9, ginzaiku: 2.4, hayauma: 2.3, wanashi: 2.3,
-    ryogae: 2.6, tatenaoshi: 2.2, ekken: 2.5, shukuba: 2.2, zange: 2, daikugoya: 1.9, chozei: 2.3, kosho: 2.2, monooki: 1.5, hanebashi: 1.9, takara: 2.8, zaimu: 2, daienkai: 1.6, kanja: 1.9, kaitou: 1.4, sumiyaki: 2 };
+  var AV = { jujutsu: 3.6, renkin: 3.1, bazaar: 2.9, shanikusai: 3.0, tetsuuchi: 3.0, shahon: 3.2, entaku: 3.0, jikeidan: 2.9, monomi: 3, meikou: 3.4, kinmyaku: 2.6, yatou: 2.9, ginzaiku: 2.4, hayauma: 2.3, wanashi: 2.3,
+    ryogae: 2.5, tatenaoshi: 2.2, ekken: 2.1, shukuba: 2.3, zange: 2, daikugoya: 1.9, chozei: 2.3, kosho: 2.2, monooki: 1.5, hanebashi: 1.9 };
   function late(K) { return Math.max(0, Math.min(1, (K.P0 - K.P) / K.P0 * 1.3 + (K.empty >= 2 ? 0.4 : 0))); }
   function cv(K, c, pl) {
     if (c === 'copper') return pl && pl.thin ? 0.3 : (pl && pl.yakusou ? 1.4 : 1);
@@ -211,9 +210,9 @@
     var pl = D[c].plus || {};
     if (c === 'ekken') return others.some(function (x) { return isA(x, 'action'); }) ? 96 : -1;
     if (pl.a >= 2) return terms >= acts || others.some(function (x) { return DRAW[x]; }) ? 92 + (pl.m ? 1 : 0) : 70;
-    if (pl.a === 1) return { renkin: 88, bazaar: 87, monomi: 86, ginzaiku: 85, hayauma: 84, wanashi: 83, kanja: 82, monooki: others.some(function (x) { return isA(x, 'victory') || x === 'curse'; }) ? 80 : 20 }[c] || 80;
-    var v = { jujutsu: K.supply.curse > 0 ? 66 : 48, meikou: 60, tetsuuchi: 56, entaku: 55, shahon: 40 + 3 * Math.max(0, 7 - others.length), jikeidan: 54, yatou: 52, ryogae: others.indexOf('copper') >= 0 ? 52 : 4,
-      kinmyaku: others.some(function (x) { return x === 'silver' || x === 'copper'; }) ? 47 : 4, chozei: 46, zange: 58, tatenaoshi: 30, daikugoya: 38, kosho: 44, hanebashi: 42, sumiyaki: 43, zaimu: 41, daienkai: 45, takara: 50, kaitou: 35 }[c] || 30;
+    if (pl.a === 1) return { shanikusai: 89, renkin: 88, bazaar: 87, monomi: 86, ginzaiku: 85, hayauma: 84, wanashi: 83, monooki: others.some(function (x) { return isA(x, 'victory') || x === 'curse'; }) ? 80 : 20 }[c] || 80;
+    var v = { jujutsu: K.supply.curse > 0 ? 66 : 48, meikou: 60, tetsuuchi: 56, entaku: 55, shahon: 40 + 3 * Math.max(0, 7 - others.length), jikeidan: 54, yatou: 52, ryogae: others.some(function (x) { return isA(x, 'treasure'); }) ? 50 : 4,
+      kinmyaku: others.some(function (x) { return x === 'silver' || x === 'copper'; }) ? 47 : 4, chozei: 46, zange: 58, tatenaoshi: 30, daikugoya: 38, kosho: 44, hanebashi: 42 }[c] || 30;
     if (acts >= 2 && DRAW[c]) v += 10;
     return v;
   }
@@ -267,6 +266,7 @@
       case 'hand': return { sel: handPick(K, nd, pl, lv) };
       case 'supply': {
         if (nd.why === 'tatenaoshi') return { c: tatenaoshiGain(K, pl, nd.max) };
+        if (nd.why === 'bazaar') { var bz = bestGain(K, pl, nd.max, nd.filter, nd.why); return { c: bz && (isA(bz, 'action') || (bz === 'copper' && pl.yakusou) || (isA(bz, 'victory') && late(K) > 0.6)) ? bz : null }; }
         return { c: bestGain(K, pl, nd.max, nd.filter, nd.why) };
       }
       case 'yn': return { y: yn(K, nd, pl) };
@@ -295,14 +295,17 @@
   function handPick(K, nd, pl, lv) {
     var hand = K.hand, n = nd.max, w = nd.why;
     var elig = hand.map(function (c, i) { return i; }).filter(function (i) { return L.matches(hand[i], nd.filter); });
-    if (w === 'jikeidan' || w === 'wanashi') return worstN(K, hand, nd.min, pl);
+    if (w === 'jikeidan') { var tr = elig.slice().sort(function (a, b) { return D[hand[a]].coin - D[hand[b]].coin; }); return tr.slice(0, 1); }
+    if (w === 'wanashi' || w === 'jujutsuDisc' || w === 'entaku') return worstN(K, hand, nd.min, pl);
+    if (w === 'tetsuuchi') return elig.length && !pl.yakusou ? [elig[0]] : [];
+    if (w === 'renkin') return trashChoices(K, hand, 1, pl, 'zange');
     if (w === 'monooki') {
       var acts = K.actions, out = [], seenT = 0;
       hand.forEach(function (c, i) { if (isA(c, 'victory') && !(pl.yakusou && c === 'yakusou' && false) || c === 'curse') out.push(i); else if (TERM(c)) { if (seenT >= acts) out.push(i); seenT++; } });
       return out;
     }
     if (w === 'zange') return trashChoices(K, hand, 4, pl, 'zange');
-    if (w === 'ryogae') return elig.length ? [elig[0]] : [];
+    if (w === 'ryogae') { var cu = hand.indexOf('copper'), si = hand.indexOf('silver'); if (cu >= 0 && !pl.yakusou) return [cu]; if (si >= 0 && late(K) > 0.6) return [si]; return []; }
     if (w === 'kinmyaku') {
       var s = hand.indexOf('silver'), c = hand.indexOf('copper');
       if (s >= 0 && K.supply.gold) return [s]; if (c >= 0 && K.supply.silver && !pl.yakusou) return [c]; return [];
@@ -339,16 +342,9 @@
     switch (nd.why) {
       case 'hanebashi': return true;
       case 'kosho': return true;
+      case 'jujutsu': return K.hand.length >= 4 || late(K) > 0.7 ? !(K.hand.some(function (c) { return c === 'gold'; }) && K.hand.length <= 4) : true;   // はい＝手札を1枚捨てる（呪いより軽いことが多い）
+      case 'ekkenBack': return (AV[nd.c] || 2) >= 3 && late(K) < 0.8;
       case 'shahon': return K.actions === 0;
-      case 'zaimu': {
-        var dk = K.deckComp, ds = K.disc, avg = function (o) { var n = 0, v = 0; for (var c in o) { n += o[c]; v += o[c] * cv(K, c, pl); } return n ? v / n : 0; };
-        var both = Object.assign({}, ds); for (var c in dk) both[c] = (both[c] || 0) + dk[c];
-        return avg(dk) < avg(both);
-      }
-      case 'kanja': {
-        var good = isA(nd.c, 'action') || nd.c === 'gold' || nd.c === 'silver';
-        return nd.who === K.p ? !good : good;   // yes = 捨て札にする
-      }
     }
     return true;
   }
@@ -359,8 +355,6 @@
       return bi >= 0 ? [bi] : [];
     }
     if (nd.why === 'yatou') { var o = nd.only.slice().sort(function (a, b) { return cv(K, cs[a], pl) - cv(K, cs[b], pl); }); return [o[0]]; }
-    if (nd.why === 'kaitou') { var t = nd.only.slice().sort(function (a, b) { return D[cs[b]].coin - D[cs[a]].coin; }); return [t[0]]; }
-    if (nd.why === 'kaitouGain') return cs.map(function (c, i) { return i; }).filter(function (i) { return cs[i] !== 'copper' || pl.yakusou; });
     return cs.slice(0, nd.min).map(function (c, i) { return i; });
   }
   // ---- 弱い：ほぼ気まぐれ（ルールは守る） ----

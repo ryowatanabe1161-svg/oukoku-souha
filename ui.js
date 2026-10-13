@@ -35,8 +35,7 @@ function renderLobby(v) {
   $('seatHint').textContent = v.seats.length < 2 ? '招待URLかQRコードを送ってね。空いた席は CPU が入ります。' : '';
   // 王国
   $('kmodeSeg').innerHTML = segHtml([['set', 'おすすめ'], ['random', 'ランダム'], ['custom', '自分で選ぶ']], o.kmode, ro);
-  $('ed1Seg').innerHTML = segHtml([['0', '第2版の26種'], ['1', '＋初版の6種']], o.ed1 ? '1' : '0', ro);
-  var sets = L.SETS.filter(function (s) { return o.ed1 || s.ed === 2; });
+  var sets = L.SETS.slice();
   $('setList').style.display = o.kmode === 'set' ? '' : 'none';
   $('setList').innerHTML = segHtml(sets.map(function (s) { return [s.id, esc(s.n)]; }), o.set, ro);
   $('rollBtn').style.display = o.kmode === 'random' && isHost ? '' : 'none';
@@ -70,16 +69,20 @@ function renderLobby(v) {
 var WHY_HAND = {
   monooki: function (n) { return '📦物置：捨てるカードを選ぶ（何枚でも）→ 同じ枚数を引く'; },
   zange: function (n) { return '🕯️懺悔室：追放するカードを <b>4枚まで</b> 選ぶ'; },
-  jikeidan: function (n) { return '🗡️自警団：手札が3枚になるように <b>' + n.min + '枚</b> 捨てる'; },
+  jikeidan: function () { return '🗡️自警団：捨てる <b>貨幣</b> を1枚選ぶ'; },
+  tetsuuchi: function () { return '⚒️鉄打ち場：捨てる銅貨を選ぶ（捨てたら🃏+1・しなくてもOK）'; },
+  renkin: function () { return '⚗️錬金室：追放するカードを選ぶ（追放したら💰+2・しなくてもOK）'; },
+  entaku: function () { return '🪑円卓の間：みんなに <b>見せる</b> カードを1枚選ぶ（手札に残る）'; },
+  jujutsuDisc: function () { return '🔮呪術師：捨てるカードを1枚選ぶ'; },
   chozei: function () { return '📜徴税官：山札の上に置く <b>領地カード</b> を1枚選ぶ'; },
-  ryogae: function () { return '⚖️両替商：追放する銅貨を選ぶ（しなくてもOK）'; },
+  ryogae: function () { return '⚖️両替商：追放する貨幣を選ぶ（そのコスト＋💰2・しなくてもOK）'; },
   wanashi: function (n) { return '🪤罠師：捨てるカードを <b>' + n.min + '枚</b> 選ぶ'; },
   tatenaoshi: function () { return '🏗️建て直し：追放するカードを1枚選ぶ'; },
-  ekken: function () { return '👑謁見の間：<b>2回</b> 使うアクションカードを選ぶ（しなくてもOK）'; },
+  ekken: function () { return '👑謁見の間：使うアクションカードを選ぶ（⚡は減らない・しなくてもOK）'; },
   kinmyaku: function () { return '⛏️金脈さがし：追放する貨幣を選ぶ（しなくてもOK）'; },
   meikou: function () { return '🏺名工：山札の上に置くカードを1枚選ぶ'; }
 };
-var WHY_SUP = { daikugoya: '🪚大工小屋', tatenaoshi: '🏗️建て直し', kinmyaku: '⛏️金脈さがし', meikou: '🏺名工', daienkai: '🍗大宴会' };
+var WHY_SUP = { bazaar: '🧺バザール（しなくてもOK）', daikugoya: '🪚大工小屋', tatenaoshi: '🏗️建て直し', kinmyaku: '⛏️金脈さがし', meikou: '🏺名工', daienkai: '🍗大宴会' };
 function promptText(g, nd) {
   if (nd.k === 'hand') return (WHY_HAND[nd.why] || function () { return 'カードを選ぶ'; })(nd);
   if (nd.k === 'supply') return (WHY_SUP[nd.why] || '') + '：<b>💰' + nd.max + ' 以下</b>の' + (nd.filter === 'treasure' ? '貨幣' : 'カード') + 'を' + (nd.dest === 'hand' ? '<b>手札に</b>' : '') + 'もらう（光っている山をタップ）';
@@ -87,7 +90,7 @@ function promptText(g, nd) {
 }
 function canBuyList(g) {
   var extra = g.bought ? 0 : (g.hand || []).reduce(function (s, c) { return s + (D[c].coin || 0); }, 0);
-  return { now: g.coins, max: g.coins + extra };
+  var d = g.discount || 0; return { now: g.coins + d, max: g.coins + extra + d };
 }
 function renderGame(v) {
   var g = v.g, nd = g.need, mine = myNeed(g);
@@ -162,6 +165,7 @@ function evText(g, e) {
     case 'discard': return { t: n(e.p) + ' は ' + e.n + '枚捨てた' + (e.open ? '：' + list(e.open) : mine ? '：' + list(mine.cards) : e.top ? '（いちばん上 ' + cb(e.top) + '）' : '') };
     case 'topdeck': return { t: n(e.p) + ' は 1枚を山札の上に置いた' + (e.c ? '：' + cb(e.c) : mine ? '：' + list(mine.cards) : '') };
     case 'revealHand': return { t: n(e.p) + ' の手札（領地なし）：' + list(e.cards) };
+    case 'show': return { t: n(e.p) + (e.why === 'jikeidan' ? ' の手札（貨幣なし）：' : ' が手札から見せた：') + list(e.cards) };
     case 'reveal': return { t: n(e.p) + ' の山札の上：' + (e.cards.length ? list(e.cards) : 'なし') };
     case 'hanebashi': return { t: n(e.p) + ' は ' + cb('hanebashi') + ' を見せて攻撃をふせいだ', s: 'good' };
     case 'aside': return { t: n(e.p) + ' は ' + cb(e.c) + ' を脇によけた' };
@@ -261,8 +265,8 @@ var YN = {
   hanebashi: function (nd, g) { return { q: cb('hanebashi') + ' を見せて、' + esc(pname(g, nd.by)) + ' の ' + cb(nd.src) + ' をふせぐ？', y: '見せる🌉', n: '見せない' }; },
   kosho: function (nd) { return { q: '🧒小姓：山札の上の ' + cb(nd.c) + ' をそのまま使う？（⚡は減りません）', y: '使う', n: '使わない', c: nd.c }; },
   shahon: function (nd) { return { q: '📚写本室：' + cb(nd.c) + ' を引いた。脇によける？（よけると 代わりに次を引く）', y: 'よける', n: '手札に入れる', c: nd.c }; },
-  zaimu: function () { return { q: '🎩財務卿：山札をまとめて捨て札に置く？', y: '置く', n: '置かない' }; },
-  kanja: function (nd, g) { return { q: '🕵️間者：' + esc(pname(g, nd.who)) + ' の山札の上は ' + cb(nd.c) + '。', y: '捨て札にする', n: '山札に戻す', c: nd.c }; }
+  jujutsu: function (nd, g) { return { q: '🔮' + esc(pname(g, nd.by)) + ' の呪術師：呪いを1枚もらう？ それとも手札を1枚捨てる？', y: '手札を1枚捨てる', n: '呪いをもらう' }; },
+  ekkenBack: function (nd) { return { q: '👑謁見の間：使った ' + cb(nd.c) + ' を山札の上に戻す？', y: '戻す', n: '戻さない', c: nd.c }; }
 };
 function renderSheets(g, nd, mine) {
   if (!mine || ['yn', 'pick', 'monomi'].indexOf(nd.k) < 0) { if ($('choiceSheet').classList.contains('active') && !ui.cardSheet) overlay('choiceSheet', false); return; }
@@ -294,7 +298,7 @@ function openCard(c, ctx) {
   var g = lastView && lastView.g, n = g && g.supply ? g.supply[c] : null, h = '';
   h = '<div class="chHead">' + cardHtml(c, 'big') + '<div><h4>' + cemo(c) + ' ' + cname(c) + '</h4><div class="sm2">コスト 💰' + D[c].cost + '・' + ctypes(c) + (n != null ? '・残り ' + n + '枚' : '') + (D[c].ed === 1 ? '・初版' : '') + '</div></div></div><div class="ctxt">' + cardText(c) + '</div>';
   var b = '';
-  if (ctx === 'buy') { var cb2 = canBuyList(g), cost = D[c].cost; b = btn('buyGo', (cost > cb2.now ? '財宝を出して ' : '') + '買う（💰' + cost + '）', 'main'); }
+  if (ctx === 'buy') { var cb2 = canBuyList(g), cost = Math.max(0, D[c].cost - (g.discount || 0)); b = btn('buyGo', (cost > cb2.now ? '財宝を出して ' : '') + '買う（💰' + cost + '）', 'main'); }
   else if (ctx === 'gain') b = btn('gainGo', 'これをもらう', 'main');
   h += '<div class="row" style="margin-top:10px">' + btn('closeCard', 'とじる') + b + '</div>';
   ui.cardSheet = c; ui.sheetCtx = ctx || null; $('choiceBox').innerHTML = h; overlay('choiceSheet', true);
